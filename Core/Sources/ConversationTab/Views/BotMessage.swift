@@ -126,7 +126,10 @@ struct BotMessage: View {
 
                     HStack {
                         if shouldShowTurnStatus() {
-                            TurnStatusView(message: message)
+                            TurnStatusView(
+                                message: message,
+                                isSummarizingConversation: chat.isSummarizingConversation
+                            )
                                 .modify { view in
                                     if message.turnStatus == .inProgress {
                                         view
@@ -241,14 +244,17 @@ struct BotMessage: View {
 }
 
 private struct TurnStatusView: View {
-    
+
     let message: DisplayedChatMessage
-    
+    let isSummarizingConversation: Bool
+
     @AppStorage(\.chatFontSize) var chatFontSize
-    
+
     var body: some View {
         HStack(spacing: 0) {
-            if let turnStatus = message.turnStatus {
+            if isSummarizingConversation {
+                summarizingStatus
+            } else if let turnStatus = message.turnStatus {
                 switch turnStatus {
                 case .inProgress:
                     inProgressStatus
@@ -271,8 +277,21 @@ private struct TurnStatusView: View {
                 .controlSize(.small)
                 .scaledScaleEffect(0.7)
                 .scaledFrame(width: 16, height: 16)
-            
+
             Text("Generating...")
+                .scaledFont(size: chatFontSize - 1)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    private var summarizingStatus: some View {
+        HStack(spacing: 4) {
+            ProgressView()
+                .controlSize(.small)
+                .scaledScaleEffect(0.7)
+                .scaledFrame(width: 16, height: 16)
+
+            Text("Summarizing conversation...")
                 .scaledFont(size: chatFontSize - 1)
                 .foregroundColor(.secondary)
         }

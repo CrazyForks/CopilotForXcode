@@ -64,11 +64,14 @@ public final class ChatService: ChatServiceType, ObservableObject {
     public var memory: ContextAwareAutoManagedChatMemory
     @Published public internal(set) var chatHistory: [ChatMessage] = []
     @Published public internal(set) var isReceivingMessage = false
+    @Published public internal(set) var isSummarizingConversation = false
     @Published public internal(set) var fileEditMap: OrderedDictionary<URL, FileEdit> = [:]
+    @Published public internal(set) var contextSizeInfo: ContextSizeInfo? = nil
     public internal(set) var requestType: RequestType? = nil
     public private(set) var chatTabInfo: ChatTabInfo
     private let conversationProvider: ConversationServiceProvider?
     private let conversationProgressHandler: ConversationProgressHandler
+    private let compressionHandler: CompressionHandler
     private let conversationContextHandler: ConversationContextHandler = ConversationContextHandlerImpl.shared
     // sync all the files in the workspace to watch for changes.
     private let watchedFilesHandler: WatchedFilesHandler = WatchedFilesHandlerImpl.shared
@@ -85,10 +88,12 @@ public final class ChatService: ChatServiceType, ObservableObject {
     init(provider: any ConversationServiceProvider,
          memory: ContextAwareAutoManagedChatMemory = ContextAwareAutoManagedChatMemory(),
          conversationProgressHandler: ConversationProgressHandler = ConversationProgressHandlerImpl.shared,
+         compressionHandler: CompressionHandler = CompressionHandlerImpl.shared,
          chatTabInfo: ChatTabInfo) {
         self.memory = memory
         self.conversationProvider = provider
         self.conversationProgressHandler = conversationProgressHandler
+        self.compressionHandler = compressionHandler
         self.chatTabInfo = chatTabInfo
         memory.chatService = self
         
@@ -133,6 +138,19 @@ public final class ChatService: ChatServiceType, ObservableObject {
         
         conversationProgressHandler.onEnd.sink { [weak self] (token, progress) in
             self?.handleProgressEnd(token: token, progress: progress)
+        }.store(in: &cancellables)
+
+        compressionHandler.onCompressionStarted.sink { [weak self] compressionConversationId in
+            guard let self, self.conversationId == compressionConversationId else { return }
+            self.isSummarizingConversation = true
+        }.store(in: &cancellables)
+
+        compressionHandler.onCompressionCompleted.sink { [weak self] completedNotification in
+            guard let self, self.conversationId == completedNotification.conversationId else { return }
+            self.isSummarizingConversation = false
+            if let contextInfo = completedNotification.contextInfo {
+                self.contextSizeInfo = contextInfo
+            }
         }.store(in: &cancellables)
     }
     
@@ -745,7 +763,11 @@ public final class ChatService: ChatServiceType, ObservableObject {
         guard let workDownToken = activeRequestId, workDownToken == token else {
             return
         }
-        
+
+        if let contextSize = progress.contextSize {
+            self.contextSizeInfo = contextSize
+        }
+
         let id = progress.turnId
         var content = ""
         var references: [ConversationReference] = []
@@ -895,6 +917,7 @@ public final class ChatService: ChatServiceType, ObservableObject {
     private func resetOngoingRequest(with turnStatus: ChatMessage.TurnStatus = .success) {
         activeRequestId = nil
         isReceivingMessage = false
+        isSummarizingConversation = false
         requestType = nil
         
         // Clear turn tracking data

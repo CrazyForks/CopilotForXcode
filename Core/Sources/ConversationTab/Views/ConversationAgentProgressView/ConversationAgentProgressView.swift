@@ -103,8 +103,7 @@ struct ToolConfirmationView: View {
 
     @ViewBuilder
     private var confirmationActionView: some View {
-        if #available(macOS 13.0, *),
-           FeatureFlagNotifierImpl.shared.featureFlags.agentModeAutoApproval &&
+        if FeatureFlagNotifierImpl.shared.featureFlags.agentModeAutoApproval &&
            CopilotPolicyNotifierImpl.shared.copilotPolicy.agentModeAutoApprovalEnabled {
             if tool.isToolcallingLoopContinueTool {
                 continueButton
@@ -150,7 +149,6 @@ struct ToolConfirmationView: View {
         .buttonStyle(.borderedProminent)
     }
 
-    @available(macOS 13.0, *)
     private var sensitiveFileMenuItems: [SplitButtonMenuItem] {
         var items: [SplitButtonMenuItem] = []
 
@@ -200,7 +198,6 @@ struct ToolConfirmationView: View {
         return items
     }
 
-    @available(macOS 13.0, *)
     private var sensitiveFileSplitButton: some View {
         SplitButton(
             title: "Allow",
@@ -213,7 +210,6 @@ struct ToolConfirmationView: View {
         )
     }
 
-    @available(macOS 13.0, *)
     private func mcpMenuItems(serverName: String) -> [SplitButtonMenuItem] {
         var items: [SplitButtonMenuItem] = []
 
@@ -288,7 +284,6 @@ struct ToolConfirmationView: View {
         return items
     }
 
-    @available(macOS 13.0, *)
     private func mcpSplitButton(serverName: String) -> some View {
         SplitButton(
             title: "Allow",

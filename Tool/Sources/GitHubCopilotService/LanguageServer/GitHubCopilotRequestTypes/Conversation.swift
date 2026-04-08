@@ -35,6 +35,7 @@ public struct ConversationProgressReport: BaseConversationProgress {
     public let steps: [ConversationProgressStep]?
     public let editAgentRounds: [AgentRound]?
     public let parentTurnId: String?
+    public let contextSize: ContextSizeInfo?
 }
 
 public struct ConversationProgressEnd: BaseConversationProgress {

@@ -304,7 +304,7 @@ public class MCPRegistryService: ObservableObject {
 
         // Save configuration
         let jsonData = try JSONSerialization.data(withJSONObject: config, options: [.prettyPrinted])
-        try jsonData.write(to: configFileURL)
+        try jsonData.write(to: configFileURL, options: .atomic)
 
         // Note: UserDefaults update and notification will be handled by ToolsConfigView's file monitor
         // with debouncing to prevent duplicate notifications
