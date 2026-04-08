@@ -170,6 +170,8 @@ public extension Notification.Name {
         .Name("com.github.CopilotForXcode.GithubCopilotAgentAutoApprovalDidChange")
     static let githubCopilotAgentTrustToolAnnotationsDidChange = Notification
         .Name("com.github.CopilotForXcode.GithubCopilotAgentTrustToolAnnotationsDidChange")
+    static let githubCopilotAgentAutoCompressDidChange = Notification
+        .Name("com.github.CopilotForXcode.GithubCopilotAgentAutoCompressDidChange")
 }
 
 public class GitHubCopilotBaseService {
@@ -1483,6 +1485,10 @@ public final class GitHubCopilotService:
                 DistributedNotificationCenter.default()
                     .publisher(for: .githubCopilotAgentTrustToolAnnotationsDidChange)
                     .map { _ in "agentTrustToolAnnotations" }
+                    .eraseToAnyPublisher(),
+                DistributedNotificationCenter.default()
+                    .publisher(for: .githubCopilotAgentAutoCompressDidChange)
+                    .map { _ in "agentAutoCompress" }
                     .eraseToAnyPublisher()
             )
             

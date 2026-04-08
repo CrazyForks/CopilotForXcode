@@ -183,24 +183,13 @@ struct ChatPanelMessages: View {
                                     )
                                 })
                         }
-                        .modify { view in
-                            if #available(macOS 13.0, *) {
-                                view
-                                    .listRowSeparator(.hidden)
-                            } else {
-                                view
-                            }
-                        }
+                        .listRowSeparator(.hidden)
                     }
                     .listStyle(.plain)
                     .scaledPadding(.leading, 8)
                     .listRowBackground(EmptyView())
                     .modify { view in
-                        if #available(macOS 13.0, *) {
-                            view.scrollContentBackground(.hidden)
-                        } else {
-                            view
-                        }
+                        view.scrollContentBackground(.hidden)
                     }
                     .coordinateSpace(name: scrollSpace)
                     .preference(

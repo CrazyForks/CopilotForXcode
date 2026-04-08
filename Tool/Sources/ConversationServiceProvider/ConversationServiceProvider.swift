@@ -451,6 +451,18 @@ public struct ConversationProgressStep: Codable, Equatable, Identifiable {
     }
 }
 
+public struct ContextSizeInfo: Codable, Equatable {
+    public let totalTokenLimit: Int
+    public let systemPromptTokens: Int
+    public let toolDefinitionTokens: Int
+    public let userMessagesTokens: Int
+    public let assistantMessagesTokens: Int
+    public let attachedFilesTokens: Int
+    public let toolResultsTokens: Int
+    public let totalUsedTokens: Int
+    public let utilizationPercentage: Double
+}
+
 public struct DidChangeWatchedFilesEvent: Codable {
     public var workspaceUri: String
     public var changes: [FileEvent]

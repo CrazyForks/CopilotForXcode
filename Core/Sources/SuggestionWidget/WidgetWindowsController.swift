@@ -240,42 +240,24 @@ private extension WidgetWindowsController {
             let valueChange = await editor.axNotifications.notifications()
                 .filter { $0.kind == .valueChanged }
 
-            if #available(macOS 13.0, *) {
-                for await notification in merge(
-                    scroll,
-                    selectionRangeChange.debounce(for: Duration.milliseconds(0)),
-                    valueChange.debounce(for: Duration.milliseconds(100))
-                ) {
-                    guard await xcodeInspector.safe.latestActiveXcode != nil else { return }
-                    try Task.checkCancellation()
+            for await notification in merge(
+                scroll,
+                selectionRangeChange.debounce(for: Duration.milliseconds(0)),
+                valueChange.debounce(for: Duration.milliseconds(100))
+            ) {
+                guard await xcodeInspector.safe.latestActiveXcode != nil else { return }
+                try Task.checkCancellation()
 
-                    // for better looking
-                    if notification.kind == .scrollPositionChanged {
-                        await hideSuggestionPanelWindow()
-                    }
-
-                    updateWindowLocation(animated: false, immediately: false)
-                    updateWindowOpacity(immediately: false)
-                    await updateCodeReviewWindowLocation(.onSourceEditorNotification(notification))
-                    
-                    await handleFixErrorEditorNotification(notification: notification)
+                // for better looking
+                if notification.kind == .scrollPositionChanged {
+                    await hideSuggestionPanelWindow()
                 }
-            } else {
-                for await notification in merge(selectionRangeChange, scroll, valueChange) {
-                    guard await xcodeInspector.safe.latestActiveXcode != nil else { return }
-                    try Task.checkCancellation()
 
-                    // for better looking
-                    if notification.kind == .scrollPositionChanged {
-                        await hideSuggestionPanelWindow()
-                    }
+                updateWindowLocation(animated: false, immediately: false)
+                updateWindowOpacity(immediately: false)
+                await updateCodeReviewWindowLocation(.onSourceEditorNotification(notification))
 
-                    updateWindowLocation(animated: false, immediately: false)
-                    updateWindowOpacity(immediately: false)
-                    await updateCodeReviewWindowLocation(.onSourceEditorNotification(notification))
-                    
-                    await handleFixErrorEditorNotification(notification: notification)
-                }
+                await handleFixErrorEditorNotification(notification: notification)
             }
         }
     }

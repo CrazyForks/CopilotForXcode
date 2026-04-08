@@ -116,9 +116,8 @@ public final class GitHubCopilotConversationService: ConversationServiceType {
     
     public func modes(workspace: WorkspaceInfo) async throws -> [ConversationMode]? {
         guard let service = await serviceLocator.getService(from: workspace) else { return nil }
-        let isPreviewEnabled = FeatureFlagNotifierImpl.shared.featureFlags.editorPreviewFeatures
         let isCustomAgentEnabled = CopilotPolicyNotifierImpl.shared.copilotPolicy.customAgentEnabled
-        let workspaceFolders = isPreviewEnabled && isCustomAgentEnabled ? getWorkspaceFolders(
+        let workspaceFolders = isCustomAgentEnabled ? getWorkspaceFolders(
             workspace: workspace
         ) : nil
         return try await service.modes(workspaceFolders: workspaceFolders)

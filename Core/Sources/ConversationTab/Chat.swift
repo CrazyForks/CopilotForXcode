@@ -295,16 +295,22 @@ struct Chat {
     struct ConversationState: Equatable {
         var history: [DisplayedChatMessage]
         var isReceivingMessage: Bool
+        var isSummarizingConversation: Bool
         var requestType: RequestType?
+        var contextSizeInfo: ContextSizeInfo?
 
         init(
             history: [DisplayedChatMessage] = [],
             isReceivingMessage: Bool = false,
-            requestType: RequestType? = nil
+            isSummarizingConversation: Bool = false,
+            requestType: RequestType? = nil,
+            contextSizeInfo: ContextSizeInfo? = nil
         ) {
             self.history = history
             self.isReceivingMessage = isReceivingMessage
+            self.isSummarizingConversation = isSummarizingConversation
             self.requestType = requestType
+            self.contextSizeInfo = contextSizeInfo
         }
 
         func subsequentMessages(after messageId: MessageID) -> [DisplayedChatMessage] {
@@ -454,9 +460,19 @@ struct Chat {
             set { conversation.isReceivingMessage = newValue }
         }
 
+        var isSummarizingConversation: Bool {
+            get { conversation.isSummarizingConversation }
+            set { conversation.isSummarizingConversation = newValue }
+        }
+
         var requestType: RequestType? {
             get { conversation.requestType }
             set { conversation.requestType = newValue }
+        }
+
+        var contextSizeInfo: ContextSizeInfo? {
+            get { conversation.contextSizeInfo }
+            set { conversation.contextSizeInfo = newValue }
         }
 
         var handOffClicked: Bool {
@@ -590,10 +606,12 @@ struct Chat {
         case observeHistoryChange
         case observeIsReceivingMessageChange
         case observeFileEditChange
+        case observeContextSizeInfoChange
 
         case historyChanged
         case isReceivingMessageChanged
         case fileEditChanged
+        case contextSizeInfoChanged
 
         case chatMenu(ChatMenu.Action)
         
@@ -651,6 +669,7 @@ struct Chat {
         case observeIsReceivingMessageChange(UUID)
         case sendMessage(UUID)
         case observeFileEditChange(UUID)
+        case observeContextSizeInfoChange(UUID)
         case observeFixErrorNotification(UUID)
     }
 
@@ -942,6 +961,7 @@ struct Chat {
                     await send(.observeHistoryChange)
                     await send(.observeIsReceivingMessageChange)
                     await send(.observeFileEditChange)
+                    await send(.observeContextSizeInfoChange)
                 }
 
             case .observeHistoryChange:
@@ -967,6 +987,7 @@ struct Chat {
                 return .run { send in
                     let stream = AsyncStream<Void> { continuation in
                         let cancellable = service.$isReceivingMessage
+                            .merge(with: service.$isSummarizingConversation)
                             .sink { _ in
                                 continuation.yield()
                             }
@@ -998,6 +1019,25 @@ struct Chat {
                     }
                 }.cancellable(
                     id: CancelID.observeFileEditChange(id),
+                    cancelInFlight: true
+                )
+
+            case .observeContextSizeInfoChange:
+                return .run { send in
+                    let stream = AsyncStream<Void> { continuation in
+                        let cancellable = service.$contextSizeInfo
+                            .sink { _ in
+                                continuation.yield()
+                            }
+                        continuation.onTermination = { _ in
+                            cancellable.cancel()
+                        }
+                    }
+                    for await _ in stream {
+                        await send(.contextSizeInfoChanged)
+                    }
+                }.cancellable(
+                    id: CancelID.observeContextSizeInfoChange(id),
                     cancelInFlight: true
                 )
 
@@ -1045,9 +1085,14 @@ struct Chat {
 
             case .isReceivingMessageChanged:
                 state.isReceivingMessage = service.isReceivingMessage
+                state.isSummarizingConversation = service.isSummarizingConversation
                 state.requestType = service.requestType
                 return .none
-                
+
+            case .contextSizeInfoChanged:
+                state.conversation.contextSizeInfo = service.contextSizeInfo
+                return .none
+
             case .fileEditChanged:
                 state.fileEditMap = service.fileEditMap
                 let fileEditMap = state.fileEditMap
