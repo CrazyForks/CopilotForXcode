@@ -13,6 +13,7 @@ struct MCPXcodeServerInstallView: View {
     /// Cached to avoid repeated file I/O during SwiftUI rendering.
     @State private var configuredXcodeServerNames: Set<String> = []
     @ObservedObject private var mcpToolManager = CopilotMCPToolManagerObservable.shared
+    @ObservedObject private var registryService = MCPRegistryService.shared
 
     private let requiredXcodeVersion = "26.4"
     private let serverName = "xcode"
@@ -39,6 +40,10 @@ struct MCPXcodeServerInstallView: View {
         isConfigured || isConnected
     }
 
+    private var isRegistryOnly: Bool {
+        registryService.mcpRegistryEntries?.first?.registryAccess == .registryOnly
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
             VStack(alignment: .leading, spacing: 0) {
@@ -61,6 +66,7 @@ struct MCPXcodeServerInstallView: View {
         .settingsContainerStyle(isExpanded: false)
         .onAppear {
             checkInstallationStatus()
+            Task { await registryService.refreshAllowlist() }
         }
         .onChange(of: mcpToolManager.availableMCPServerTools) { _ in
             checkInstallationStatus()
@@ -76,11 +82,13 @@ struct MCPXcodeServerInstallView: View {
             Text("Requires Xcode \(requiredXcodeVersion) or later. Current version: \(versionText).")
         } else if isConnected {
             Text("Xcode's built-in MCP server is connected, enabling richer editor integration.")
+        } else if isRegistryOnly {
+            Text("Manual installation of Xcode's built-in MCP server is blocked by your organization's registry policy. Please check the MCP Registry for an approved installation option, or contact your enterprise IT administrator.")
         } else if isConfiguredButNotConnected {
             Text("Please confirm in Xcode to allow the built-in MCP server.")
         } else {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Connect Copilot to Xcode’s built‑in MCP server to enable richer editor integration.")
+                Text("Connect Copilot to Xcode's built-in MCP server to enable richer editor integration.")
                 if let installError {
                     Text(installError)
                         .font(.caption)
@@ -96,6 +104,8 @@ struct MCPXcodeServerInstallView: View {
             EmptyView()
         } else if isConnected {
             Text("Connected").foregroundColor(.secondary)
+        } else if isRegistryOnly {
+            EmptyView()
         } else if isConfiguredButNotConnected {
             HStack(spacing: 6) {
                 ProgressView()
