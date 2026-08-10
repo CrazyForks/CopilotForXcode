@@ -6,7 +6,7 @@
     "url": "https://github.com/github",
     "verified": true
   },
-  "repository": "https://github.com/microsoft/github-copilot-plugin",
+  "repository": "https://github.com/github/CopilotForXcode",
   "license": "proprietary",
   "plugins": [
     {
