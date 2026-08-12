@@ -374,7 +374,7 @@ extension CopilotModel {
             modelPickerCategory: modelPickerCategory,
             modelPickerPriceCategory: modelPickerPriceCategory,
             reasoningEfforts: capabilities.supports.reasoningEfforts,
-            supportsReasoningEffortLevel: capabilities.supports.supportsReasoningEffortLevel ?? false
+            supportsReasoningEffortLevel: capabilities.supports.supportsReasoningEffortLevel
         )
     }
 }
