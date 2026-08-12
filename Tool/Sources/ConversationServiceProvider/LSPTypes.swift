@@ -48,6 +48,7 @@ public struct CopilotModel: Codable, Equatable {
     public let isChatFallback: Bool
     public let capabilities: CopilotModelCapabilities
     public let billing: CopilotModelBilling?
+    public let customModel: CopilotModelCustomModel?
     public let degradationReason: String?
     public let modelPickerCategory: String?
     public let modelPickerPriceCategory: String?
@@ -73,7 +74,7 @@ public struct CopilotModelCapabilitiesLimits: Codable, Equatable {
 public struct CopilotModelCapabilitiesSupports: Codable, Equatable {
     public let vision: Bool
     public let reasoningEfforts: [String]?
-    public let supportsReasoningEffortLevel: Bool?
+    public let supportsReasoningEffortLevel: Bool
 }
 
 public struct CopilotModelBilling: Codable, Equatable, Hashable {
@@ -81,20 +82,54 @@ public struct CopilotModelBilling: Codable, Equatable, Hashable {
     public let multiplier: Float
     public let tokenBasedBillingEnabled: Bool?
     public let tokenPrices: CopilotModelBillingTokenPrices?
+    public let promo: CopilotModelBillingPromo?
 
-    public init(isPremium: Bool, multiplier: Float, tokenBasedBillingEnabled: Bool? = nil, tokenPrices: CopilotModelBillingTokenPrices? = nil) {
+    public init(
+        isPremium: Bool,
+        multiplier: Float,
+        tokenBasedBillingEnabled: Bool? = nil,
+        tokenPrices: CopilotModelBillingTokenPrices? = nil,
+        promo: CopilotModelBillingPromo? = nil
+    ) {
         self.isPremium = isPremium
         self.multiplier = multiplier
         self.tokenBasedBillingEnabled = tokenBasedBillingEnabled
         self.tokenPrices = tokenPrices
+        self.promo = promo
     }
 }
 
 public struct CopilotModelBillingTokenPrices: Codable, Equatable, Hashable {
+    public let batchSize: Int?
+    public let `default`: CopilotModelTokenPriceTier?
+    public let longContext: CopilotModelTokenPriceTier?
+
+    public var cachePrice: Float? { `default`?.cachePrice ?? longContext?.cachePrice }
+    public var inputPrice: Float? { `default`?.inputPrice ?? longContext?.inputPrice }
+    public var outputPrice: Float? { `default`?.outputPrice ?? longContext?.outputPrice }
+    public var tokenUnit: Int? { batchSize }
+}
+
+public struct CopilotModelTokenPriceTier: Codable, Equatable, Hashable {
     public let cachePrice: Float?
+    public let cacheWritePrice: Float?
     public let inputPrice: Float?
     public let outputPrice: Float?
-    public let tokenUnit: Int?
+    public let maxContext: Int?
+}
+
+public struct CopilotModelBillingPromo: Codable, Equatable, Hashable {
+    public let id: String
+    public let discountPercent: Float
+    public let endsAt: String
+    public let message: String
+}
+
+public struct CopilotModelCustomModel: Codable, Equatable {
+    public let keyName: String?
+    public let ownerName: String?
+    public let ownerType: String?
+    public let provider: String?
 }
 
 // MARK: ChatModes
